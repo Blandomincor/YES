@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Concurso de Tazas — Votaciones</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f7f9fc;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background-color: #1e63b5;
+      color: white;
+      text-align: center;
+      padding: 20px;
+      font-size: 22px;
+      font-weight: bold;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 30px auto;
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      text-align: center;
+      color: #333;
+    }
+
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      justify-content: center;
+    }
+
+    .cup {
+      border: 2px solid #ccc;
+      border-radius: 10px;
+      padding: 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .cup img {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+      border-radius: 10px;
+    }
+
+    .cup:hover {
+      transform: scale(1.05);
+      border-color: #1e63b5;
+    }
+
+    .selected {
+      border: 3px solid #1e63b5;
+      background-color: #e9f1fb;
+    }
+
+    .buttons {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    button {
+      background-color: #1e63b5;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 5px;
+    }
+
+    button:hover {
+      background-color: #164b85;
+    }
+
+    footer {
+      text-align: center;
+      color: #777;
+      margin-top: 30px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <header>Concurso de Tazas — Votaciones</header>
+
+  <div class="container">
+    <h2>Selecciona hasta 3 tazas</h2>
+    <div class="gallery" id="gallery">
+      <!-- Aquí se generan las tazas -->
+    </div>
+
+    <div class="buttons">
+      <button onclick="enviarVotos()">Enviar Votos</button>
+      <button onclick="reiniciar()">Reiniciar</button>
+    </div>
+  </div>
+
+  <footer>Archivo local — No conectado a base de datos.</footer>
+
+  <script>
+    const gallery = document.getElementById("gallery");
+    const totalTazas = 15;
+    let seleccionadas = [];
+
+    // Generar las 15 tazas
+    for (let i = 1; i <= totalTazas; i++) {
+      const cupDiv = document.createElement("div");
+      cupDiv.className = "cup";
+      cupDiv.innerHTML = `
+        <img src="images/cup${i}.jpg" alt="Taza ${i}">
+        <p>Taza ${i}</p>
+      `;
+      cupDiv.addEventListener("click", () => seleccionarTaza(i, cupDiv));
+      gallery.appendChild(cupDiv);
+    }
+
+    function seleccionarTaza(num, div) {
+      if (seleccionadas.includes(num)) {
+        seleccionadas = seleccionadas.filter(n => n !== num);
+        div.classList.remove("selected");
+      } else {
+        if (seleccionadas.length >= 3) {
+          alert("Solo puedes seleccionar hasta 3 tazas.");
+          return;
+        }
+        seleccionadas.push(num);
+        div.classList.add("selected");
+      }
+      console.log("Seleccionadas:", seleccionadas);
+    }
+
+    function enviarVotos() {
+      if (seleccionadas.length === 0) {
+        alert("Debes seleccionar al menos una taza.");
+        return;
+      }
+      alert("Has votado por las tazas: " + seleccionadas.join(", "));
+    }
+
+    function reiniciar() {
+      seleccionadas = [];
+      document.querySelectorAll(".cup").forEach(div => div.classList.remove("selected"));
+    }
+  </script>
+</body>
+</html>
