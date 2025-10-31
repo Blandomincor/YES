@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Concurso de Tazas — Votaciones Santo Domingo</title>
+  <style>
+    :root{--accent:#2b6cb0;--card:#fff;--bg:#f4f6fb}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;background:var(--bg);margin:0;color:#111}
+    header{background:linear-gradient(90deg,#2bb04c 0%,#213271 100%);color:#fff;padding:18px 20px}
+    .container{max-width:980px;margin:18px auto;padding:18px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+    .card{background:var(--card);border-radius:10px;padding:8px;box-shadow:0 1px 6px rgba(0,0,0,.08);text-align:center}
+    .card img{width:100%;height:140px;object-fit:cover;border-radius:8px;cursor:pointer}
+    .card .title{margin-top:8px;font-weight:600;font-size:14px}
+    .actions{margin-top:18px;display:flex;gap:10px;flex-wrap:wrap}
+    button{padding:8px 12px;border-radius:8px;border:0;cursor:pointer;background:var(--accent);color:white}
+    button.secondary{background:#6b7280}
+    .top-row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+    .info{background:#fff;padding:12px;border-radius:10px;box-shadow:0 1px 6px rgba(0,0,0,.06)}
+    .selected-list{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    .pill{background:#eef2ff;padding:6px 8px;border-radius:999px;font-size:13px}
+    .modal{position:fixed;left:0;top:0;width:100%;height:100%;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.4);z-index:40}
+    .modal.open{display:flex}
+    .modal .box{background:#fff;padding:16px;border-radius:10px;max-width:420px;width:92%}
+    label{display:block;margin:8px 0}
+    .admin-panel{background:#fff;padding:12px;border-radius:10px;box-shadow:0 1px 8px rgba(0,0,0,.06);margin-top:12px}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:6px;border-bottom:1px solid #eee;text-align:left}
+    .danger{background:#f97373;color:#fff}
+    footer{margin-top:24px;text-align:center;color:#555;font-size:13px}
+    .hint{font-size:13px;color:#374151}
+  </style>
+</head>
+<body>
+  <header>
+    <div style="max-width:980px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:12px">
+      <div>
+        <h1 style="margin:0;font-size:20px">Concurso de Tazas — Votaciones Santo Domingo</h1>
+        <div style="font-size:13px;opacity:.9">Selecciona hasta 3 tazas, sin repetir categorías.</div>
+      </div>
+      <div>
+        <button id="adminBtn" title="Acceso administrador">Acceso Admin</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="top-row">
+      <div class="info">
+        <strong>Estado:</strong> <span id="statusText">Cargando...</span>
+        <div class="hint">Puedes seleccionar hasta 3 tazas con categorías diferentes.</div>
+      </div>
+      <div class="info">
+        <strong>Seleccionadas (máx 3):</strong>
+        <div class="selected-list" id="selectedList"></div>
+      </div>
+    </div>
+
+    <section style="margin-top:12px">
+      <div class="grid" id="cupsGrid"></div>
+    </section>
+
+    <div class="actions">
+      <button id="submitVotes" disabled>Enviar Votos</button>
+    </div>
+
+    <div id="adminPanel" class="admin-panel" style="display:none;margin-top:18px">
+      <h3>Panel administrador</h3>
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+        <div><strong>Resultados totales</strong></div>
+        <div><button id="exportCsv">Exportar CSV</button></div>
+        <div><button id="clearAll" class="danger">Borrar todos los votos</button></div>
+      </div>
+      <div id="resultsArea" style="margin-top:12px"></div>
+    </div>
+
+    <footer>
+      <div>Archivo local. Para uso en red o base de datos, usar servidor o Google Sheets.</div>
+    </footer>
+  </main>
+
+  <!-- Modal de selección -->
+  <div id="modal" class="modal">
+    <div class="box">
+      <h3 id="modalTitle">Votar taza</h3>
+      <div style="display:flex;gap:10px;align-items:center">
+        <img id="modalImg" src="" alt="" style="width:100px;height:70px;object-fit:cover;border-radius:8px"/>
+        <div>
+          <div id="modalCupName" style="font-weight:700"></div>
+          <div id="modalCupIndex" style="font-size:13px;color:#666"></div>
+        </div>
+      </div>
+
+      <form id="voteForm" style="margin-top:12px">
+        <label><input type="radio" name="category" value="Creativa" required> Creativa</label>
+        <label><input type="radio" name="category" value="Divertida" required> Divertida</label>
+        <label><input type="radio" name="category" value="Navideña" required> Navideña</label>
+        <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+          <button type="button" id="cancelModal" class="secondary">Cancelar</button>
+          <button type="submit">Añadir voto</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal admin -->
+  <div id="adminModal" class="modal">
+    <div class="box">
+      <h3>Acceso Admin</h3>
+      <input id="adminPass" type="password" placeholder="Contraseña" style="width:100%;padding:8px;border-radius:6px;border:1px solid #ddd"/>
+      <div style="margin-top:10px;display:flex;gap:8px;justify-content:flex-end">
+        <button id="closeAdminModal" class="secondary">Cerrar</button>
+        <button id="doAdminLogin">Entrar</button>
+      </div>
+      <p style="font-size:13px;color:#666;margin-top:8px">Contraseña por defecto: </p>
+    </div>
+  </div>
+
+<script>
+const adminPassword = 'admin123';
+const SHEETS_URL = "https://script.google.com/macros/s/AKfycbyYyLzHBp4I91rsi8FUmupgsdSaOFs5ZQFabHbDoKRDL5aWlDz8Lay6Cgzdq5A2xGf3Yw/exec"; // <-- reemplaza por tu URL
+
+const cupData = [
+  { name: "ChocoBOOM!!!!🔥", file: "chocoboom" },
+  { name: "Destello de Felicidad", file: "destello" },
+  { name: "El aroma navideño", file: "elaromanavideno" },
+  { name: "La buho", file: "labuho" },
+  { name: "La mayimba", file: "lamayimba" },
+  { name: "Lo intenté", file: "lointente" },
+  { name: "Mrs. Fiesta", file: "mrsfiesta" },
+  { name: "Navidad INCOCEGLA", file: "navidadincocegla" },
+  { name: "Navinomo", file: "navinomo" },
+  { name: "Rebosante Navidad", file: "rebosantenavidad" },
+  { name: "Rincon de Santa", file: "rincondesanta" },
+  { name: "Santa Claus", file: "santaclaus" },
+  { name: "Santa needs coffee too", file: "santaneedscoffee" },
+  { name: "The Masha's Christmas", file: "themashaschristmas" }
+];
+
+const cups = cupData.map((c, index) => ({
+  id: index + 1,
+  name: c.name,
+  img: `images/${c.file}.jpg`
+}));
+
+let selections = [];
+let usedCategories = [];
+let totals = {};
+let hasVoted = localStorage.getItem('user_voted_tazas2025');
+
+const grid = document.getElementById('cupsGrid');
+const selectedList = document.getElementById('selectedList');
+const statusText = document.getElementById('statusText');
+const submitBtn = document.getElementById('submitVotes');
+const modal = document.getElementById('modal');
+const voteForm = document.getElementById('voteForm');
+const modalImg = document.getElementById('modalImg');
+const modalCupName = document.getElementById('modalCupName');
+const modalCupIndex = document.getElementById('modalCupIndex');
+const adminModal = document.getElementById('adminModal');
+const adminPanel = document.getElementById('adminPanel');
+const resultsArea = document.getElementById('resultsArea');
+const exportCsvBtn = document.getElementById('exportCsv');
+const clearAllBtn = document.getElementById('clearAll');
+
+async function loadTotals() {
+  try {
+    const res = await fetch(SHEETS_URL);
+    totals = await res.json();
+    renderResults(false);
+    statusText.textContent = hasVoted ? 'Ya votaste.' : 'Pendiente';
+  } catch (err) {
+    console.error('Error cargando datos', err);
+  }
+}
+
+function renderGrid() {
+  grid.innerHTML = '';
+  cups.forEach(c => {
+    const el = document.createElement('div');
+    el.className = 'card';
+    el.innerHTML = `<img src="${c.img}" alt="${c.name}" data-id="${c.id}"><div class="title">${c.name}</div>`;
+    el.querySelector('img').addEventListener('click', () => openVoteModal(c.id));
+    grid.appendChild(el);
+  });
+}
+
+function updateSelectedUI() {
+  selectedList.innerHTML = '';
+  selections.forEach(s => {
+    const cup = cups.find(c => c.id === s.cupId);
+    const pill = document.createElement('div');
+    pill.className = 'pill';
+    pill.textContent = `${cup.name} — ${s.category}`;
+    selectedList.appendChild(pill);
+  });
+  submitBtn.disabled = selections.length < 3;
+}
+
+function openVoteModal(cupId) {
+  if (hasVoted) return alert('Ya votaste.');
+  if (selections.find(s => s.cupId === cupId)) return alert('Ya seleccionaste esa taza.');
+  if (selections.length >= 3) return alert('Ya tienes 3 tazas seleccionadas.');
+  const cup = cups.find(c => c.id === cupId);
+  modalImg.src = cup.img;
+  modalCupName.textContent = cup.name;
+  modalCupIndex.textContent = `Nº ${cup.id}`;
+  voteForm.reset();
+  voteForm.querySelectorAll('input[type=radio]').forEach(r => r.disabled = usedCategories.includes(r.value));
+  modal.classList.add('open');
+}
+
+document.getElementById('cancelModal').addEventListener('click', () => modal.classList.remove('open'));
+
+voteForm.addEventListener('submit', e => {
+  e.preventDefault();
+  const category = new FormData(voteForm).get('category');
+  const cupName = modalCupName.textContent;
+  const cupId = Number(modalCupIndex.textContent.replace('Nº ', ''));
+
+  if (usedCategories.includes(category)) return alert(`Ya usaste "${category}"`);
+  selections.push({ cupId, name: cupName, category });
+  usedCategories.push(category);
+  modal.classList.remove('open');
+  updateSelectedUI();
+  if (selections.length === 3) alert('Ya seleccionaste tus 3 tazas.');
+});
+
+submitBtn.addEventListener('click', async () => {
+  if (selections.length !== 3) return alert('Selecciona 3 tazas.');
+  try {
+    await fetch(SHEETS_URL, {
+      method: 'POST',
+      body: JSON.stringify({ selections }),
+      headers: { 'Content-Type': 'application/json' }
+    });
+    localStorage.setItem('user_voted_tazas2025', 'true');
+    alert('¡Gracias por votar!');
+    hasVoted = true;
+    selections = [];
+    usedCategories = [];
+    await loadTotals();
+  } catch (err) {
+    alert('Error al enviar votos.');
+    console.error(err);
+  }
+});
+
+document.getElementById('adminBtn').addEventListener('click', () => adminModal.classList.add('open'));
+document.getElementById('closeAdminModal').addEventListener('click', () => adminModal.classList.remove('open'));
+document.getElementById('doAdminLogin').addEventListener('click', () => {
+  const pass = document.getElementById('adminPass').value;
+  if (pass === adminPassword) {
+    adminModal.classList.remove('open');
+    adminPanel.style.display = 'block';
+    renderResults(true);
+  } else alert('Contraseña incorrecta');
+});
+
+function renderResults(show) {
+  if (!totals) return;
+  let html = '<table><tr><th>Taza</th><th>Creativa</th><th>Divertida</th><th>Navideña</th></tr>';
+  cups.forEach(c => {
+    const t = totals[c.name] || { Creativa: 0, Divertida: 0, Navideña: 0 };
+    html += `<tr><td>${c.name}</td><td>${t.Creativa}</td><td>${t.Divertida}</td><td>${t.Navidena ?? t.Navicena ?? 0}</td></tr>`;
+  });
+  html += '</table>';
+  resultsArea.innerHTML = html;
+  if (show) adminPanel.style.display = 'block';
+}
+
+exportCsvBtn.addEventListener('click', () => {
+  const rows = [['Taza', 'Categoría', 'Votos']];
+  for (const name in totals) {
+    const t = totals[name];
+    rows.push([name, 'Creativa', t.Creativa]);
+    rows.push([name, 'Divertida', t.Divertida]);
+    rows.push([name, 'Navideña', t.Navideña]);
+  }
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'votos_tazas.csv';
+  a.click();
+});
+
+clearAllBtn.addEventListener('click', async () => {
+  if (!confirm('¿Borrar todos los votos?')) return;
+  await fetch(SHEETS_URL + '?action=clear');
+  alert('Votos reiniciados.');
+  loadTotals();
+});
+
+loadTotals();
+renderGrid();
+</script>
+</body>
+</html>
